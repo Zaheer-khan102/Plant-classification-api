@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicinal Plant Identifier</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        h2 {
+            color: #2c7a7b;
+        }
+        .container {
+            max-width: 500px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #preview {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #e6f5f4;
+            display: none;
+        }
+        .loading {
+            display: none;
+            font-size: 18px;
+            color: #555;
+        }
+        button {
+            background: #2c7a7b;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #246767;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🌿 Medicinal Plant Identifier</h2>
+        <input type="file" id="imageInput" accept="image/*">
+        <button onclick="uploadImage()">Identify Plant</button>
+        <p class="loading" id="loadingText">Identifying plant... ⏳</p>
+
+        <img id="preview" src="">
+        
+        <div class="result-box" id="resultBox">
+            <h3>Plant Details</h3>
+            <p><b>Scientific Name:</b> <span id="scientificName"></span></p>
+            <p><b>Family:</b> <span id="family"></span></p>
+            <p><b>Genus:</b> <span id="genus"></span></p>
+            <p><b>Confidence Score:</b> <span id="confidence"></span>%</p>
+            <p><b>Common Names:</b> <span id="commonNames"></span></p>
+            <p><b>Uses:</b> <span id="uses"></span></p>
+        </div>
+    </div>
+
+    <script>
+        function uploadImage() {
+            const fileInput = document.getElementById("imageInput");
+            if (fileInput.files.length === 0) {
+                alert("Please select an image!");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("image", file);
+
+            document.getElementById("preview").src = URL.createObjectURL(file);
+            document.getElementById("preview").style.display = "block";
+            document.getElementById("loadingText").style.display = "block";
+            document.getElementById("resultBox").style.display = "none";
+
+            fetch("http://localhost:5000/identify", {
+    method: "POST",
+    body: formData
+})
+.then(response => response.json())
+.then(data => {
+    document.getElementById("loadingText").style.display = "none";
+
+    if (data.scientific_name) {
+        document.getElementById("scientificName").innerText = data.scientific_name;
+        document.getElementById("family").innerText = data.family;
+        document.getElementById("genus").innerText = data.genus;
+        document.getElementById("confidence").innerText = data.confidence;
+
+        // ✅ FIX: Check if common_names exist before displaying
+        if (data.common_names && data.common_names.length > 0) {
+            document.getElementById("commonNames").innerText = data.common_names.join(", ");
+        } else {
+            document.getElementById("commonNames").innerText = "Not available";
+        }
+
+        document.getElementById("uses").innerText = data.uses;
+        document.getElementById("resultBox").style.display = "block";
+    } else {
+        document.getElementById("resultBox").innerHTML = "<p>No plant identified.</p>";
+    }
+})
+.catch(error => {
+    document.getElementById("loadingText").style.display = "none";
+    console.error("Error:", error);
+});
+
+        }
+    </script>
+
+</body>
+</html>
